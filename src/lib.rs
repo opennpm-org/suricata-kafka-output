@@ -101,6 +101,7 @@ impl KafkaProducer {
             .set("bootstrap.servers", &config.brokers)
             .set("client.id",&config.client_id)
             .set("message.timeout.ms", "5000")
+            .set_log_level(RDKafkaLogLevel::Debug)   
             .create()?;
         Ok(Self {
             config,
@@ -136,7 +137,7 @@ impl KafkaProducer {
                         break;
                     } else {
                         // Successfully sent.  Pop it off the channel.
-                         SCLogNotice!("Kafka producer running 5");
+                         SCLogNotice!("Kafka producer sent {:?}", buf);
                         let _ = iter.next();
 
                     }
@@ -216,6 +217,7 @@ unsafe extern "C" fn output_write(
     context.count += 1;
 
     if let Err(err) = context.tx.try_send(buf.to_string()) {
+        SCLogNotice!("Kafka producer output_write dropped");
         context.dropped += 1;
         match err {
             TrySendError::Full(_) => {
@@ -226,6 +228,7 @@ unsafe extern "C" fn output_write(
             }
         }
     }
+    SCLogNotice!("Kafka producer output_write running out");
     00
 }
 
