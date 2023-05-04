@@ -28,6 +28,7 @@ use rdkafka::error::{KafkaError};
 use rdkafka::{ClientConfig};
 use rdkafka::config::{RDKafkaLogLevel};
 use rdkafka::producer::{FutureProducer, FutureRecord};
+use rdkafka::producer::Producer;
 use std::fmt::Error;
 use std::os::raw::{c_char, c_int, c_void};
 use std::sync::mpsc::TrySendError;
