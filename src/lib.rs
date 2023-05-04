@@ -119,9 +119,13 @@ impl KafkaProducer {
         // Not sure how this will work with pipe-lining tho, will probably have
         // to do some buffering here, or just accept that any log records
         // in-flight will be lost.
+        SCLogNotice!("Kafka producer running");
         let mut iter = self.rx.iter().peekable();
+         SCLogNotice!("Kafka producer running 2");
             loop {
+                 SCLogNotice!("Kafka producer running 3");
                 if let Some(buf) = iter.peek() {
+                     SCLogNotice!("Kafka producer running 4");
                     self.count += 1;
                     if let Err(err) = self.producer.send_result(
                         FutureRecord::to(&self.config.topic)
@@ -132,6 +136,7 @@ impl KafkaProducer {
                         break;
                     } else {
                         // Successfully sent.  Pop it off the channel.
+                         SCLogNotice!("Kafka producer running 5");
                         let _ = iter.next();
 
                     }
@@ -198,12 +203,15 @@ unsafe extern "C" fn output_write(
     buffer_len: c_int,
     init_data: *const c_void,
 ) -> c_int {
+     SCLogNotice!("Kafka producer output_write running");
     let context = &mut *(init_data as *mut Context);
     let buf = if let Ok(buf) = ffi::str_from_c_parts(buffer, buffer_len) {
         buf
     } else {
+        SCLogNotice!("Kafka producer output_write returning");
         return -1;
     };
+    SCLogNotice!("Kafka producer output_write running 2");
 
     context.count += 1;
 
