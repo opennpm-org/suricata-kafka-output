@@ -33,7 +33,7 @@ use std::os::raw::{c_char, c_int, c_void};
 use std::sync::mpsc::TrySendError;
 use suricata::conf::ConfNode;
 use suricata::{SCLogError, SCLogNotice};
-
+use std::time::Duration;
 
 const DEFAULT_BUFFER_SIZE: &str = "65535";
 const DEFAULT_CLIENT_ID: &str = "rdkafka";
@@ -138,9 +138,14 @@ impl KafkaProducer {
                         break;
                     } else {
                         // Successfully sent.  Pop it off the channel.
-                         SCLogNotice!("Kafka producer sent {:?}", buf);
-                        let _ = iter.next();
-
+                         SCLogNotice!("Kafka producer sent {:?}", buf);                        
+                         for _ in 0..10
+                         {
+                               self.producer.poll(Duration::from_millis(100));
+                         }
+                         producer.flush(Duration::from_secs(1));
+                        
+                         let _ = iter.next();
                     }
                 } else {
                     break;
