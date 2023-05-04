@@ -143,7 +143,7 @@ impl KafkaProducer {
                          {
                                self.producer.poll(Duration::from_millis(100));
                          }
-                         producer.flush(Duration::from_secs(1));
+                         self.producer.flush(Duration::from_secs(1));
                         
                          let _ = iter.next();
                     }
