@@ -28,13 +28,12 @@ use rdkafka::error::{KafkaError};
 use rdkafka::{ClientConfig};
 use rdkafka::config::{RDKafkaLogLevel};
 use rdkafka::producer::{FutureProducer, FutureRecord};
-use rdkafka::producer::Producer;
+
 use std::fmt::Error;
 use std::os::raw::{c_char, c_int, c_void};
 use std::sync::mpsc::TrySendError;
 use suricata::conf::ConfNode;
 use suricata::{SCLogError, SCLogNotice};
-use std::time::Duration;
 
 const DEFAULT_BUFFER_SIZE: &str = "65535";
 const DEFAULT_CLIENT_ID: &str = "rdkafka";
@@ -126,28 +125,18 @@ impl KafkaProducer {
         let mut iter = self.rx.iter().peekable();
          SCLogNotice!("Kafka producer running 2");
             loop {
-                 SCLogNotice!("Kafka producer running 3");
+                SCLogNotice!("Kafka producer running 3");
                 if let Some(buf) = iter.peek() {
-                     SCLogNotice!("Kafka producer running 4");
+                    SCLogNotice!("Kafka producer running 4");
                     self.count += 1;
-                    if let Err(err) = self.producer.send_result(
-                        FutureRecord::to(&self.config.topic)
-                            .key("")
-                            .payload(buf),
-                    ) {
-                        SCLogError!("Failed to send event to Kafka: {:?}", err);
-                        break;
-                    } else {
-                        // Successfully sent.  Pop it off the channel.
-                         SCLogNotice!("Kafka producer sent {:?}", buf);                        
-                         for _ in 0..10
-                         {
-                               self.producer.poll(Duration::from_millis(100));
-                         }
-                         self.producer.flush(Duration::from_secs(1));
-                        
-                         let _ = iter.next();
+                    let record = FutureRecord::to(&self.config.topic).key("").payload(buf);
+                    let delivery_result = self.producer.send_result(record);
+
+                    match delivery_result {
+                        Ok(_delivery_result) => SCLogError!("Message sent successfully"),
+                        Err((e, _)) => SCLogError!("Failed to send message: {}", e),
                     }
+                    let _ = iter.next();
                 } else {
                     break;
                 }
@@ -155,6 +144,7 @@ impl KafkaProducer {
             SCLogNotice!("Producer finished: count={}", self.count,);
     }
 }
+
 struct Context {
     tx: std::sync::mpsc::SyncSender<String>,
     count: usize,
