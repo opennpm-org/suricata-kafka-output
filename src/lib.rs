@@ -133,7 +133,7 @@ impl KafkaProducer {
                     if let Err(err) = self.producer.send_result(
                         FutureRecord::to(&self.config.topic)
                             .key("")
-                            .payload(&buf),
+                            .payload(buf),
                     ) {
                         SCLogError!("Failed to send event to Kafka: {:?}", err);
                         break;
