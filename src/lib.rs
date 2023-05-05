@@ -34,6 +34,7 @@ use std::os::raw::{c_char, c_int, c_void};
 use std::sync::mpsc::TrySendError;
 use suricata::conf::ConfNode;
 use suricata::{SCLogError, SCLogNotice};
+use rdkafka::util::Timeout;
 
 const DEFAULT_BUFFER_SIZE: &str = "65535";
 const DEFAULT_CLIENT_ID: &str = "rdkafka";
@@ -130,12 +131,8 @@ impl KafkaProducer {
                     SCLogNotice!("Kafka producer running 4");
                     self.count += 1;
                     let record = FutureRecord::to(&self.config.topic).key("").payload(buf);
-                    let delivery_result = self.producer.send_result(record);
+                    self.producer.send(record, Timeout::Never);
 
-                    match delivery_result {
-                        Ok(_delivery_result) => SCLogError!("Message sent successfully"),
-                        Err((e, _)) => SCLogError!("Failed to send message: {}", e),
-                    }
                     let _ = iter.next();
                 } else {
                     break;
